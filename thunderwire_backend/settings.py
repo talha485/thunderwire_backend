@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-63ws@w)$6*1=g_h+#x82@-)dk)0*c-8!gjy13fv1m2fp-28)*^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -38,12 +38,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders',
     'chat',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -76,8 +78,12 @@ WSGI_APPLICATION = 'thunderwire_backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'thunderwire_db',
+        'USER': 'thunderwire_user',
+        'PASSWORD': 'choose_a_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -127,3 +133,27 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+
+# Django REST Framework
+# Every endpoint requires a valid session token unless the view opts out
+# (register, login, status set authentication_classes = [] / AllowAny).
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'chat.authentication.SessionTokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+
+# CORS - lets the React/Electron frontend call the API.
+# Vite dev server runs on 5173. A packaged Electron app loading from file://
+# sends Origin: null, which will need handling at packaging time.
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]

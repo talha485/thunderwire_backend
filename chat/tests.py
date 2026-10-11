@@ -18,10 +18,18 @@ class ApiFlowTests(APITestCase):
         return r.data['token']
 
     def test_register(self):
-        r = self.client.post('/api/register/', {'username': 'carol', 'password': 'x'}, format='json')
+        r = self.client.post('/api/register/', {'username': 'carol', 'password': 'Str0ng-pass'}, format='json')
         self.assertEqual(r.status_code, 201)
-        r = self.client.post('/api/register/', {'username': 'carol', 'password': 'x'}, format='json')
+        r = self.client.post('/api/register/', {'username': 'carol', 'password': 'Str0ng-pass'}, format='json')
         self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.data['error'], 'username already taken')
+
+    def test_register_rejects_weak_passwords(self):
+        for bad in ['short', 'password', '12345678']:
+            r = self.client.post('/api/register/', {'username': 'dave', 'password': bad}, format='json')
+            self.assertEqual(r.status_code, 400, bad)
+            self.assertIn('error', r.data)
+        self.assertFalse(User.objects.filter(username='dave').exists())
 
     def test_password_is_hashed_not_plaintext(self):
         self.assertTrue(self.alice.password.startswith('pbkdf2_sha256$'))

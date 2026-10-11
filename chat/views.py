@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.db import connection
 from django.db.models import Q
 from django.utils import timezone
@@ -28,6 +30,13 @@ class RegisterView(APIView):
 
         if User.objects.filter(username=username).exists():
             return Response({'error': 'username already taken'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Runs AUTH_PASSWORD_VALIDATORS from settings (min length 8, not too
+        # common, not all digits, not similar to the username).
+        try:
+            validate_password(password, user=User(username=username))
+        except ValidationError as e:
+            return Response({'error': ' '.join(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.create_user(username=username, password=password)
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
